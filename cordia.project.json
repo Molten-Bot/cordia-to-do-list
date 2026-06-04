@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "generatedBy": "cordia",
+  "updatedAt": "2026-06-04T17:02:08.843Z",
+  "project": {
+    "id": "to-do-list",
+    "handle": "to-do-list",
+    "title": "To do list",
+    "summary": "make a to do list from my emails and notes",
+    "url": "https://cordia.molten.bot/project/to-do-list"
+  },
+  "repo": {
+    "owner": "Molten-Bot",
+    "name": "cordia-to-do-list",
+    "fullName": "Molten-Bot/cordia-to-do-list"
+  }
+}
