@@ -116,3 +116,12 @@ test("served files do not reference disallowed providers or tooling", async () =
     assert.doesNotMatch(content, /\bgit\b|cloudflare/i, file);
   }
 });
+
+test("draft input render does not rewrite the active textarea value", async () => {
+  const source = await readFile("src/app.ts", "utf8");
+  const inputHandler = source.match(/elements\.draftTextarea\.addEventListener\("input", \(\) => \{(?<body>[\s\S]*?)\n  \}\);/);
+
+  assert.ok(inputHandler?.groups?.body);
+  assert.doesNotMatch(inputHandler.groups.body, /syncDraftTextarea:\s*true/);
+  assert.doesNotMatch(inputHandler.groups.body, /draftTextarea\.value\s*=/);
+});

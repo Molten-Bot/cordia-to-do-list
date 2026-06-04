@@ -240,14 +240,16 @@ function initializeApp() {
             elements.taskList.append(row);
         });
     }
-    function render() {
+    function render({ syncDraftTextarea = false } = {}) {
         const doneCount = state.tasks.filter((task) => task.done).length;
         const activeCount = state.tasks.length - doneCount;
         const importableCount = extractTasksFromText(state.draftText).length;
         document.title = state.appName;
         elements.title.textContent = state.appName;
         elements.themeSelect.value = state.theme;
-        elements.draftTextarea.value = state.draftText;
+        if (syncDraftTextarea && elements.draftTextarea.value !== state.draftText) {
+            elements.draftTextarea.value = state.draftText;
+        }
         elements.totalCount.textContent = String(state.tasks.length);
         elements.activeCount.textContent = String(activeCount);
         elements.doneCount.textContent = String(doneCount);
@@ -287,7 +289,7 @@ function initializeApp() {
         saveState();
         render();
     });
-    render();
+    render({ syncDraftTextarea: true });
 }
 if (typeof document !== "undefined") {
     initializeApp();
