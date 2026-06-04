@@ -98,7 +98,7 @@ function isTask(value: unknown): value is Task {
 function normalizeTaskText(text: string): string {
   return text
     .replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")
-    .replace(/^\s*(?:please|can you|could you|todo|task|action item)\s*:?\s*/i, "")
+    .replace(/^\s*(?:also|please|can you|could you|todo|task|action item|next step)\s*:?\s*/i, "")
     .trim()
     .replace(/[.?!]\s*$/, "");
 }
@@ -110,37 +110,72 @@ function inferPriority(text: string): TaskPriority {
 }
 
 function inferSource(line: string, currentSource: TaskSource): TaskSource {
-  if (/^(from|to|subject|sent):/i.test(line)) return "email";
-  if (/^(notes?|meeting notes?|journal):/i.test(line)) return "note";
+  if (/^(from|to|cc|bcc|subject|sent|date):/i.test(line)) return "email";
+  if (/^(notes?|meeting notes?|journal|minutes):/i.test(line)) return "note";
   return currentSource;
+}
+
+function isSourceHeader(line: string): boolean {
+  return /^(from|to|cc|bcc|subject|sent|date|notes?|meeting notes?|journal|minutes):/i.test(line);
+}
+
+function isActionHeading(line: string): boolean {
+  return /^(action items?|next steps?|todos?|tasks?):\s*$/i.test(line);
+}
+
+function isSectionHeading(line: string): boolean {
+  return /^[a-z][a-z\s/-]{1,32}:\s*$/i.test(line);
+}
+
+function splitTaskCandidates(rawLine: string): string[] {
+  if (/^\s*(?:[-*•]|\d+[.)])\s+/.test(rawLine)) return [rawLine.trim()];
+  return (rawLine.match(/[^.?!]+[.?!]?/g) ?? [rawLine]).map((candidate) => candidate.trim()).filter(Boolean);
+}
+
+function looksActionable(candidate: string, rawLine: string, inActionSection: boolean): boolean {
+  return (
+    inActionSection ||
+    /^\s*(?:[-*•]|\d+[.)])\s+/.test(rawLine) ||
+    /\b(todo|task|action item|next step|follow up|send|review|call|schedule|draft|reply|email|share|finish|prepare|confirm|check|update|book|pay|submit)\b/i.test(
+      candidate,
+    ) ||
+    /\?$/.test(candidate)
+  );
 }
 
 export function extractTasksFromText(text: string): Array<Omit<Task, "id" | "done">> {
   const tasks: Array<Omit<Task, "id" | "done">> = [];
   let currentSource: TaskSource = "note";
+  let inActionSection = false;
 
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
 
     currentSource = inferSource(line, currentSource);
-    if (/^(from|to|subject|sent|notes?|meeting notes?|journal):/i.test(line)) continue;
+    if (isSourceHeader(line)) {
+      inActionSection = false;
+      continue;
+    }
+    if (isActionHeading(line)) {
+      inActionSection = true;
+      continue;
+    }
+    if (isSectionHeading(line)) {
+      inActionSection = false;
+      continue;
+    }
 
-    const looksActionable =
-      /^\s*(?:[-*•]|\d+[.)])\s+/.test(rawLine) ||
-      /\b(todo|task|action item|follow up|send|review|call|schedule|draft|reply|email|share|finish|prepare|confirm|check)\b/i.test(
-        line,
-      ) ||
-      /\?$/.test(line);
+    for (const candidate of splitTaskCandidates(rawLine)) {
+      const textValue = normalizeTaskText(candidate);
+      if (!looksActionable(candidate, rawLine, inActionSection) || textValue.length < 4) continue;
 
-    const textValue = normalizeTaskText(line);
-    if (!looksActionable || textValue.length < 4) continue;
-
-    tasks.push({
-      text: textValue.charAt(0).toUpperCase() + textValue.slice(1),
-      source: currentSource,
-      priority: inferPriority(line),
-    });
+      tasks.push({
+        text: textValue.charAt(0).toUpperCase() + textValue.slice(1),
+        source: currentSource,
+        priority: inferPriority(candidate),
+      });
+    }
   }
 
   const seen = new Set<string>();
@@ -281,7 +316,7 @@ function initializeApp() {
     if (state.tasks.length === 0) {
       const emptyState = document.createElement("p");
       emptyState.className = "empty-state";
-      emptyState.textContent = "No tasks yet.";
+      emptyState.textContent = "Paste email threads or notes, then import tasks.";
       elements.taskList.append(emptyState);
       return;
     }
@@ -358,6 +393,7 @@ function initializeApp() {
     elements.doneCount.textContent = String(doneCount);
     elements.importCount.textContent = String(importableCount);
     elements.draftStatus.textContent = `${importableCount} found`;
+    elements.importButton.disabled = importableCount === 0;
     applyTheme();
     renderTasks();
   }

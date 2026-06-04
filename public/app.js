@@ -39,7 +39,7 @@ function isTask(value) {
 function normalizeTaskText(text) {
     return text
         .replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")
-        .replace(/^\s*(?:please|can you|could you|todo|task|action item)\s*:?\s*/i, "")
+        .replace(/^\s*(?:also|please|can you|could you|todo|task|action item|next step)\s*:?\s*/i, "")
         .trim()
         .replace(/[.?!]\s*$/, "");
 }
@@ -49,33 +49,63 @@ function inferPriority(text) {
         : "normal";
 }
 function inferSource(line, currentSource) {
-    if (/^(from|to|subject|sent):/i.test(line))
+    if (/^(from|to|cc|bcc|subject|sent|date):/i.test(line))
         return "email";
-    if (/^(notes?|meeting notes?|journal):/i.test(line))
+    if (/^(notes?|meeting notes?|journal|minutes):/i.test(line))
         return "note";
     return currentSource;
+}
+function isSourceHeader(line) {
+    return /^(from|to|cc|bcc|subject|sent|date|notes?|meeting notes?|journal|minutes):/i.test(line);
+}
+function isActionHeading(line) {
+    return /^(action items?|next steps?|todos?|tasks?):\s*$/i.test(line);
+}
+function isSectionHeading(line) {
+    return /^[a-z][a-z\s/-]{1,32}:\s*$/i.test(line);
+}
+function splitTaskCandidates(rawLine) {
+    if (/^\s*(?:[-*•]|\d+[.)])\s+/.test(rawLine))
+        return [rawLine.trim()];
+    return (rawLine.match(/[^.?!]+[.?!]?/g) ?? [rawLine]).map((candidate) => candidate.trim()).filter(Boolean);
+}
+function looksActionable(candidate, rawLine, inActionSection) {
+    return (inActionSection ||
+        /^\s*(?:[-*•]|\d+[.)])\s+/.test(rawLine) ||
+        /\b(todo|task|action item|next step|follow up|send|review|call|schedule|draft|reply|email|share|finish|prepare|confirm|check|update|book|pay|submit)\b/i.test(candidate) ||
+        /\?$/.test(candidate));
 }
 export function extractTasksFromText(text) {
     const tasks = [];
     let currentSource = "note";
+    let inActionSection = false;
     for (const rawLine of text.split(/\r?\n/)) {
         const line = rawLine.trim();
         if (!line)
             continue;
         currentSource = inferSource(line, currentSource);
-        if (/^(from|to|subject|sent|notes?|meeting notes?|journal):/i.test(line))
+        if (isSourceHeader(line)) {
+            inActionSection = false;
             continue;
-        const looksActionable = /^\s*(?:[-*•]|\d+[.)])\s+/.test(rawLine) ||
-            /\b(todo|task|action item|follow up|send|review|call|schedule|draft|reply|email|share|finish|prepare|confirm|check)\b/i.test(line) ||
-            /\?$/.test(line);
-        const textValue = normalizeTaskText(line);
-        if (!looksActionable || textValue.length < 4)
+        }
+        if (isActionHeading(line)) {
+            inActionSection = true;
             continue;
-        tasks.push({
-            text: textValue.charAt(0).toUpperCase() + textValue.slice(1),
-            source: currentSource,
-            priority: inferPriority(line),
-        });
+        }
+        if (isSectionHeading(line)) {
+            inActionSection = false;
+            continue;
+        }
+        for (const candidate of splitTaskCandidates(rawLine)) {
+            const textValue = normalizeTaskText(candidate);
+            if (!looksActionable(candidate, rawLine, inActionSection) || textValue.length < 4)
+                continue;
+            tasks.push({
+                text: textValue.charAt(0).toUpperCase() + textValue.slice(1),
+                source: currentSource,
+                priority: inferPriority(candidate),
+            });
+        }
     }
     const seen = new Set();
     return tasks.filter((task) => {
@@ -189,7 +219,7 @@ function initializeApp() {
         if (state.tasks.length === 0) {
             const emptyState = document.createElement("p");
             emptyState.className = "empty-state";
-            emptyState.textContent = "No tasks yet.";
+            emptyState.textContent = "Paste email threads or notes, then import tasks.";
             elements.taskList.append(emptyState);
             return;
         }
@@ -255,6 +285,7 @@ function initializeApp() {
         elements.doneCount.textContent = String(doneCount);
         elements.importCount.textContent = String(importableCount);
         elements.draftStatus.textContent = `${importableCount} found`;
+        elements.importButton.disabled = importableCount === 0;
         applyTheme();
         renderTasks();
     }
