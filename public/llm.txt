@@ -1,6 +1,6 @@
-# Cordia App Template
+# To do list
 
-Cordia App Template is a static browser-only web application template ready for static hosting.
+To do list is a static browser-only app for turning pasted emails and notes into a local task queue.
 
 Creator: cordia.molten.bot
 Creator URL: https://cordia.molten.bot
@@ -12,4 +12,4 @@ Primary files:
 - /global.css
 - /app.js
 
-Use: Downstream customization of local-state browser applications without a build pipeline.
+Use: Paste emails or notes, import detected task lines, then track completion locally.

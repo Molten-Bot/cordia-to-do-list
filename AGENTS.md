@@ -1,10 +1,5 @@
 # AGENTS.md
 
-## First Changeset Cleanup
-- This repository starts from a placeholder static app template. For the first product changeset, remove placeholder style and format where it conflicts with provided requirements, and build directly toward the requested app behavior.
-- Delete `./public/release.json` in the first PR; it is only a temporary release marker for the initial handoff.
-- After completing that first product changeset, remove this `First Changeset Cleanup` section from `AGENTS.md`.
-
 <!-- railsmith:start core -->
 ## Project Overview
 - Static browser-only TypeScript app template. `src/app.ts` is the typed source; `public/app.js` is compiled output served with `public/index.html` and `public/global.css`.

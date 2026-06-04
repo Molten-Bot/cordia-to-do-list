@@ -6,9 +6,9 @@
     <meta name="color-scheme" content="light dark">
     <meta
       name="description"
-      content="A small browser-only web application template ready for static hosting."
+      content="To do list turns pasted emails and notes into a local task queue."
     >
-    <title>Cordia App Template</title>
+    <title>To do list</title>
     <link rel="author" href="/humans.txt" type="text/plain">
     <link rel="alternate" href="/llm.txt" type="text/plain" title="LLM-readable site information">
     <link rel="stylesheet" href="/global.css">
@@ -21,124 +21,92 @@
     <div class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Browser app template</p>
-          <h1>Cordia</h1>
+          <p class="eyebrow">Emails + notes</p>
+          <h1>To do list</h1>
         </div>
-        <nav class="nav" aria-label="Primary">
-          <a href="#overview" aria-current="page">Overview</a>
-          <a href="#workspace">Workspace</a>
-          <a href="#settings">Settings</a>
-        </nav>
+        <div class="topbar-actions">
+          <span class="save-state" id="save-state" role="status">Autosaved</span>
+          <label class="theme-field">
+            <span>Theme</span>
+            <select id="theme-select">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+        </div>
       </header>
 
-      <main id="main">
-        <section class="hero" id="overview" aria-labelledby="hero-title">
-          <div class="hero-copy">
-            <p class="eyebrow">Static hosting ready starter</p>
-            <h2 id="hero-title">A clean starting point for browser-only apps.</h2>
-            <p>
-              Customize the data model, views, and actions without introducing a
-              build pipeline. State is local by default, markup stays plain, and
-              assets live in one deployable folder.
-            </p>
-            <div class="hero-actions">
-              <a class="button primary" href="#workspace">Open workspace</a>
-              <a class="button secondary" href="#settings">Edit settings</a>
-            </div>
-          </div>
-          <div class="status-panel" aria-label="Application status">
-            <div>
-              <span class="status-dot" aria-hidden="true"></span>
-              <span>Ready for customization</span>
-            </div>
-            <strong id="item-count">0</strong>
-            <span>saved items</span>
-          </div>
-        </section>
-
-        <section class="section-grid" id="workspace" aria-labelledby="workspace-title">
-          <div class="panel workspace-panel">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Workspace</p>
-                <h2 id="workspace-title">Starter list</h2>
-              </div>
-              <button class="button secondary" id="clear-items" type="button">Clear done</button>
-            </div>
-
-            <form class="item-form" id="item-form">
-              <label for="item-input">New item</label>
-              <div class="input-row">
-                <input
-                  id="item-input"
-                  name="item"
-                  type="text"
-                  autocomplete="off"
-                  maxlength="80"
-                  placeholder="Add a task, note, or placeholder record"
-                  required
-                >
-                <button class="button primary" type="submit">Add</button>
-              </div>
-            </form>
-
-            <ul class="item-list" id="item-list" aria-live="polite"></ul>
-          </div>
-
-          <aside class="panel" aria-labelledby="snapshot-title">
-            <p class="eyebrow">Snapshot</p>
-            <h2 id="snapshot-title">Template pieces</h2>
-            <dl class="stat-list">
-              <div>
-                <dt>Runtime</dt>
-                <dd>Browser only</dd>
-              </div>
-              <div>
-                <dt>Deploy folder</dt>
-                <dd><code>public</code></dd>
-              </div>
-              <div>
-                <dt>Styles</dt>
-                <dd><code>global.css</code></dd>
-              </div>
-              <div>
-                <dt>Script</dt>
-                <dd><code>app.js</code></dd>
-              </div>
-            </dl>
-          </aside>
-        </section>
-
-        <section class="panel settings-panel" id="settings" aria-labelledby="settings-title">
+      <main id="main" class="workspace" aria-label="To do list workspace">
+        <section class="source-panel" aria-labelledby="source-title">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Settings</p>
-              <h2 id="settings-title">App preferences</h2>
+              <p class="eyebrow">Source</p>
+              <h2 id="source-title">Inbox text</h2>
             </div>
-            <span class="save-state" id="save-state" role="status">Saved locally</span>
+            <span class="pill" id="draft-status">0 found</span>
           </div>
 
-          <div class="settings-grid">
-            <label class="field">
-              <span>App name</span>
-              <input id="app-name" type="text" maxlength="32" value="Cordia">
-            </label>
+          <label class="source-field" for="source-text">Paste emails or notes</label>
+          <textarea
+            id="source-text"
+            spellcheck="true"
+            placeholder="Paste email threads, meeting notes, or scratch notes here."
+          ></textarea>
 
-            <label class="field">
-              <span>Theme</span>
-              <select id="theme-select">
-                <option value="system">System</option>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </label>
+          <div class="source-actions">
+            <button class="button primary" id="import-tasks" type="button">Import tasks</button>
+            <span><strong id="import-count">0</strong> task lines found</span>
           </div>
+        </section>
+
+        <section class="tasks-panel" aria-labelledby="tasks-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Queue</p>
+              <h2 id="tasks-title">Tasks</h2>
+            </div>
+            <button class="button secondary" id="clear-done" type="button">Clear done</button>
+          </div>
+
+          <div class="stats-grid" aria-label="Task totals">
+            <div>
+              <strong id="total-count">0</strong>
+              <span>Total</span>
+            </div>
+            <div>
+              <strong id="active-count">0</strong>
+              <span>Active</span>
+            </div>
+            <div>
+              <strong id="done-count">0</strong>
+              <span>Done</span>
+            </div>
+          </div>
+
+          <form class="add-task-form" id="add-task-form">
+            <label for="manual-task">Manual task</label>
+            <div class="input-row">
+              <input
+                id="manual-task"
+                name="task"
+                type="text"
+                autocomplete="off"
+                maxlength="120"
+                placeholder="Add one task"
+                required
+              >
+              <button class="button primary" type="submit">Add</button>
+            </div>
+          </form>
+
+          <ul class="task-list" id="task-list" aria-live="polite"></ul>
         </section>
       </main>
 
       <footer class="site-footer">
         <span>Created by <a href="https://cordia.molten.bot">cordia.molten.bot</a>.</span>
-        <a href="https://molten.bot">molten.bot</a>
+        <a href="/release.json">Release 0</a>
       </footer>
     </div>
   </body>
