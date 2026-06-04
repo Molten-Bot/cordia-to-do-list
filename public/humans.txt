@@ -7,7 +7,7 @@ Platform URL: https://molten.bot
 
 /* SITE */
 
-Name: Cordia App Template
-Description: Static browser-only web application template ready for static hosting.
+Name: To do list
+Description: Static browser-only app for turning emails and notes into a local task queue.
 Language: English
 Standards: HTML, CSS, JavaScript
