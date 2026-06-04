@@ -286,6 +286,11 @@ a:focus-visible {
   border-color: var(--primary);
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .source-actions {
   align-items: center;
   justify-content: space-between;

@@ -42,6 +42,35 @@ Notes:
   ]);
 });
 
+test("extractTasksFromText handles paragraph emails and action sections", () => {
+  const extracted = extractTasksFromText(`From: Sam
+Subject: Renewal
+Thanks for the recap. Please send the signed renewal today. Also book the kickoff.
+
+Meeting notes:
+Action items:
+1. Update customer tracker
+2. Pay vendor invoice by Thursday`);
+
+  assert.deepEqual(extracted, [
+    { text: "Send the signed renewal today", source: "email", priority: "high" },
+    { text: "Book the kickoff", source: "email", priority: "normal" },
+    { text: "Update customer tracker", source: "note", priority: "normal" },
+    { text: "Pay vendor invoice by Thursday", source: "note", priority: "high" },
+  ]);
+});
+
+test("extractTasksFromText stops action sections at later headings", () => {
+  const extracted = extractTasksFromText(`Notes:
+Action items:
+- Send invoice
+
+Risks:
+Budget may change`);
+
+  assert.deepEqual(extracted, [{ text: "Send invoice", source: "note", priority: "normal" }]);
+});
+
 test("parseStoredState merges valid stored values with defaults", () => {
   const defaultState = createDefaultState(() => "default-id");
   const stored = JSON.stringify({
