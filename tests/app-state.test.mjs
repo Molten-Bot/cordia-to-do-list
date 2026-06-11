@@ -22,6 +22,7 @@ test("createDefaultState uses supplied id factory", () => {
     ["task-1", "task-2", "task-3"],
   );
   assert.equal(state.appName, "To do list");
+  assert.equal(state.inboxAddress, "MYNAME+todo@gmail.com");
 });
 
 test("extractTasksFromText finds action lines from emails and notes", () => {
@@ -76,6 +77,7 @@ test("parseStoredState merges valid stored values with defaults", () => {
   const stored = JSON.stringify({
     appName: "To do list",
     theme: "dark",
+    inboxAddress: "alex+todo@example.com",
     draftText: "Notes:\n- Send invoice",
     tasks: [{ id: "stored-id", text: "Stored task", done: true, source: "note", priority: "high" }],
   });
@@ -83,9 +85,20 @@ test("parseStoredState merges valid stored values with defaults", () => {
   assert.deepEqual(parseStoredState(stored, defaultState), {
     appName: "To do list",
     theme: "dark",
+    inboxAddress: "alex+todo@example.com",
     draftText: "Notes:\n- Send invoice",
     tasks: [{ id: "stored-id", text: "Stored task", done: true, source: "note", priority: "high" }],
   });
+});
+
+test("parseStoredState falls back to default inbox address when stored address is invalid", () => {
+  const defaultState = createDefaultState(() => "default-id");
+  const stored = JSON.stringify({
+    inboxAddress: "not an email",
+    tasks: [],
+  });
+
+  assert.equal(parseStoredState(stored, defaultState).inboxAddress, "MYNAME+todo@gmail.com");
 });
 
 test("parseStoredState falls back when stored JSON is invalid", () => {
@@ -98,6 +111,7 @@ test("task reducers add, update, remove, import, and clear immutably", () => {
   const state = {
     appName: "To do list",
     theme: "system",
+    inboxAddress: "alex+todo@example.com",
     draftText: "",
     tasks: [
       { id: "one", text: "One", done: false, source: "manual", priority: "normal" },

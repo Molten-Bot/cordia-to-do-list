@@ -18,6 +18,7 @@ export interface Task {
 export interface AppState {
   appName: string;
   theme: Theme;
+  inboxAddress: string;
   draftText: string;
   tasks: Task[];
 }
@@ -31,6 +32,9 @@ interface AppElements {
   draftStatus: HTMLElement;
   draftTextarea: HTMLTextAreaElement;
   doneCount: HTMLElement;
+  inboxAddressInput: HTMLInputElement;
+  inboxCopyButton: HTMLButtonElement;
+  inboxStatus: HTMLElement;
   importButton: HTMLButtonElement;
   importCount: HTMLElement;
   manualInput: HTMLInputElement;
@@ -61,6 +65,7 @@ export function createDefaultState(idFactory: () => string = () => crypto.random
   return {
     appName: "To do list",
     theme: "system",
+    inboxAddress: "MYNAME+todo@gmail.com",
     draftText:
       "From: Priya\nSubject: Launch checklist\nPlease review welcome email by Friday.\nCan you follow up with Sam about notes from planning?\n\nNotes:\n- Draft task list from inbox\n- Call Jordan about Q3 receipts\n- Send summary to team",
     tasks: [
@@ -81,6 +86,10 @@ function isTaskSource(value: unknown): value is TaskSource {
 
 function isTaskPriority(value: unknown): value is TaskPriority {
   return value === "normal" || value === "high";
+}
+
+function isEmailAddress(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function isTask(value: unknown): value is Task {
@@ -195,6 +204,10 @@ export function parseStoredState(storedState: string | null, defaultState: AppSt
     return {
       appName: typeof parsed.appName === "string" ? parsed.appName : defaultState.appName,
       theme: isTheme(parsed.theme) ? parsed.theme : defaultState.theme,
+      inboxAddress:
+        typeof parsed.inboxAddress === "string" && isEmailAddress(parsed.inboxAddress)
+          ? parsed.inboxAddress
+          : defaultState.inboxAddress,
       draftText: typeof parsed.draftText === "string" ? parsed.draftText : defaultState.draftText,
       tasks: Array.isArray(parsed.tasks) && parsed.tasks.every(isTask) ? parsed.tasks : defaultState.tasks,
     };
@@ -278,6 +291,9 @@ function getElements(): AppElements {
     draftStatus: getElement("#draft-status", HTMLElement),
     draftTextarea: getElement("#source-text", HTMLTextAreaElement),
     doneCount: getElement("#done-count", HTMLElement),
+    inboxAddressInput: getElement("#inbox-address", HTMLInputElement),
+    inboxCopyButton: getElement("#copy-inbox-address", HTMLButtonElement),
+    inboxStatus: getElement("#inbox-status", HTMLElement),
     importButton: getElement("#import-tasks", HTMLButtonElement),
     importCount: getElement("#import-count", HTMLElement),
     manualInput: getElement("#manual-task", HTMLInputElement),
@@ -385,6 +401,13 @@ function initializeApp() {
     document.title = state.appName;
     elements.title.textContent = state.appName;
     elements.themeSelect.value = state.theme;
+    if (elements.inboxAddressInput.value !== state.inboxAddress) {
+      elements.inboxAddressInput.value = state.inboxAddress;
+    }
+    elements.inboxCopyButton.disabled = !isEmailAddress(state.inboxAddress);
+    elements.inboxStatus.textContent = isEmailAddress(state.inboxAddress)
+      ? "Forwarding target ready"
+      : "Enter valid email";
     if (syncDraftTextarea && elements.draftTextarea.value !== state.draftText) {
       elements.draftTextarea.value = state.draftText;
     }
@@ -419,6 +442,24 @@ function initializeApp() {
     state = clearDoneTasks(state);
     saveState();
     render();
+  });
+
+  elements.inboxAddressInput.addEventListener("input", () => {
+    state = { ...state, inboxAddress: elements.inboxAddressInput.value.trim() };
+    saveState();
+    render();
+  });
+
+  elements.inboxCopyButton.addEventListener("click", async () => {
+    if (!isEmailAddress(state.inboxAddress)) return;
+
+    try {
+      await navigator.clipboard.writeText(state.inboxAddress);
+      elements.inboxStatus.textContent = "Copied";
+    } catch {
+      elements.inboxAddressInput.select();
+      elements.inboxStatus.textContent = "Select and copy";
+    }
   });
 
   elements.draftTextarea.addEventListener("input", () => {
