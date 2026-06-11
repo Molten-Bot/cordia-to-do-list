@@ -47,6 +47,26 @@
             <span class="pill" id="draft-status">0 found</span>
           </div>
 
+          <div class="inbox-setup" aria-labelledby="inbox-setup-title">
+            <div>
+              <p class="eyebrow">Forwarding</p>
+              <h3 id="inbox-setup-title">Task inbox</h3>
+            </div>
+            <label for="inbox-address">Forward-to address</label>
+            <div class="input-row">
+              <input
+                id="inbox-address"
+                name="inbox-address"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                placeholder="MYNAME+todo@gmail.com"
+              >
+              <button class="button secondary" id="copy-inbox-address" type="button">Copy</button>
+            </div>
+            <span class="save-state" id="inbox-status" role="status">Forwarding target ready</span>
+          </div>
+
           <label class="source-field" for="source-text">Paste emails or notes</label>
           <textarea
             id="source-text"

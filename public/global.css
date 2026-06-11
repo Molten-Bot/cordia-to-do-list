@@ -133,6 +133,7 @@ a {
 
 .topbar h1,
 .source-panel h2,
+.inbox-setup h3,
 .tasks-panel h2 {
   margin: 0;
   line-height: 1.05;
@@ -214,6 +215,29 @@ a {
 .source-panel h2,
 .tasks-panel h2 {
   font-size: clamp(1.4rem, 3vw, 2.1rem);
+}
+
+.inbox-setup {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+
+.inbox-setup h3 {
+  font-size: 1rem;
+}
+
+.inbox-setup label {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.inbox-setup input {
+  background: var(--surface);
 }
 
 .pill {
